@@ -3,171 +3,114 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alex <alex@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: omalovic <omalovic@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/24 10:44:53 by alex              #+#    #+#             */
-/*   Updated: 2024/10/24 14:56:23 by alex             ###   ########.fr       */
+/*   Created: 2024/10/22 14:43:14 by omalovic          #+#    #+#             */
+/*   Updated: 2024/11/09 16:34:22 by omalovic         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-#define BUFFER_SIZE 5
-// char	**make_general_buffer(char **general_buffer, char *ready_buffer, char **temp)
-// {
-// 	int	q_elem;
-// 	int	i;
-
-// 	// while ()
-// }
-
-// char	**make_memory_general_buffer(char **general_buffer, char *ready_buffer)
-// {
-// 	char	**temp;
-// 	int	q_elem;
-// 	int	i;
-// 	int	len_buffer;
-
-// 	q_elem = 0;
-// 	while (general_buffer[q_elem] != NULL)
-// 		q_elem++;
-// 	temp = (char **)malloc(sizeof(char *) * (q_elem + 2));
-// 	if (!temp)
-// 		return (NULL);
-// 	temp[q_elem + 1] = NULL;
-// 	q_elem = 0;
-// 	while (general_buffer[q_elem] != NULL)
-// 	{
-// 		i = 0;
-// 		while (general_buffer[q_elem][i] != '\0')
-// 			i++;
-// 		temp[q_elem][i] = (char *)malloc(sizeof(char) * (i + 1));
-// 		if (!temp[q_elem][i])
-// 			return (clean_all(temp));
-// 		temp[q_elem][i] = '\0';
-// 		q_elem++;
-// 	}
-// 	return (make_genral_buffer(general_buffer, ready_buffer, temp));
-// }
-
-// /* 
-// скопировать содержимое буфера в temp
-// добавить буферу места на +1 строку
-// перекинуть все данные из temp обратно в буфер */
-
-char *get_buffer(char *buffer, ssize_t bytes_read, int *found)
+void	free_str(char *str, int sign)
 {
-	char	*result;
-	int		i;
-	int		j;
-
-	j = 0;
-	i = 0;
-	result = NULL;
-	while (i < (int)bytes_read)
+	if (sign)
+		free(str);
+	if (!sign)
 	{
-		if (buffer[i] == '\n')
-		{
-			*found = 1;
-			break ;
-		}
-		i++;
+		if (str != NULL)
+			free(str);
 	}
-	result = (char *)malloc(sizeof(char) * (i + 1));
+}
+
+int	get_i1(char *str)
+{
+	if (str != NULL)
+		return (ft_strlen(str));
+	return (0);
+}
+
+char	*gen_str(char *src1, char *src2, int i2)
+{
+	int		i1;
+	char	*result;
+	int		j;
+	int		k;
+
+	i1 = get_i1(src1);
+	result = (char *)malloc(sizeof(char) * (i1 + i2 + 1));
 	if (!result)
 		return (NULL);
-	while (j < i)
+	j = 0;
+	while (j < i1)
 	{
-		result[j] = buffer[j];
+		result[j] = src1[j];
 		j++;
 	}
-	result[i] = '\0';
+	k = 0;
+	while (k < i2)
+	{
+		result[j] = src2[k];
+		j++;
+		k++;
+	}
+	result[j] = '\0';
+	free_str(src1, 0);
 	return (result);
 }
 
-int	q_symbols(char **general_buffer)
+int	checker(char *str)
 {
-	int		i_elem;
-	int		counter;
-
-	i_elem = 0;
-	counter = 0;
-	while (general_buffer[i_elem] != NULL)
-	{
-		counter += ft_strlen(general_buffer[i_elem]);
-		i_elem++;
-	}
-	return (counter);
-}
-
-char	*ft_join_buffer(char **general_buffer)
-{
-	int	q_sym;
-	int i_elem;
 	int	i;
-	char	*result;
 
-	q_sym = q_symbols(general_buffer);
-	result = (char *)malloc(sizeof(char) * (q_sym + 1));
-	if (!result)
-		return (NULL);
-	i_elem = 0;
-	q_sym = 0;
-	while (general_buffer[i_elem] != NULL)
+	i = 0;
+	while (str[i] != '\0')
 	{
-		i = 0;
-		while (general_buffer[i_elem][i] != '\0')
-		{
-			result[q_sym] = general_buffer[i_elem][i];
-			q_sym++;
-			i++;
-		}
-		i_elem++;
+		if (str[i] == '\n')
+			return (i);
+		i++;
 	}
-	result[q_sym] = '\0';
-	return (result);
+	return (i);
 }
 
 char	*get_next_line(int fd)
 {
-	char	buffer[BUFFER_SIZE];
-	char	*ready_buffer;
-	char	**general_buffer;
 	ssize_t	bytes_read;
-	int		found;
+	char	buffer[BUFFER_SIZE + 1];
+	char	*result = NULL;
+	static char remainder;
 
-	found = 0;
-	general_buffer = NULL;
 	while (1)
 	{
-		if (found)
-			break ;
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		if (bytes_read < 0)
+		if (bytes_read == -1)
 		{
-			free(general_buffer);
 			return (NULL);
 		}
-		if (bytes_read == 0 && !general_buffer)
+		if (bytes_read == 0) // срабатывает это условие
 			return (NULL);
-		ready_buffer = get_buffer(buffer, bytes_read, &found);
-		if (!ready_buffer)
+		buffer[bytes_read] = '\0';
+		result = gen_str(result, buffer, checker(buffer));
+		if (!result)
 		{
-			free(general_buffer);
 			return (NULL);
 		}
-		general_buffer = copy_arr(general_buffer, ready_buffer);
-		free(ready_buffer);
+		if (checker(buffer) < (int)bytes_read)
+		{
+			return (result);
+		}
 	}
-	return (ft_join_buffer(general_buffer));
+	return (NULL);
 }
 
 int main()
 {
-	int fd = open("/home/alex/42_leraning/get_next_line/text", O_RDONLY);
+	int fd = open("/Users/omalovic/get_next_line_project/file", O_RDONLY);
+	if (fd == -1)
+		return 1;
 	printf("%s\n", get_next_line(fd));
-	// for (int i = 0; result[i] != NULL; i++)
-	// {
-		// printf("%s\n", result[i]);
-	// }
+	printf("%s\n", get_next_line(fd));
+	printf("%s\n", get_next_line(fd));
+
+
 }
